@@ -27,24 +27,24 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(open, QtCore.SIGNAL('triggered()'), self.import_from_file )
         
         exit = QtGui.QAction('Exit', self)
-        exit.setShortcuts(['Ctrl+Q',QtCore.Qt.Key_Escape])
+        exit.setShortcut('Ctrl+Q')
         exit.setStatusTip('Exit application')
         self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
         
         grid = QtGui.QAction('Grid', self)
-        grid.setStatusTip('Show Grid')
+        grid.setStatusTip('Show/Hide Grid')
         grid.setCheckable(True)
         grid.setChecked(True)
         self.connect(grid, QtCore.SIGNAL('triggered()'), self.centralWidget().toggle_grid)
         
         frame = QtGui.QAction('Frame', self)
-        frame.setStatusTip('Show Frame Reference')
+        frame.setStatusTip('Show/Hide Frame Reference')
         frame.setCheckable(True)
         frame.setChecked(True)
         self.connect(frame, QtCore.SIGNAL('triggered()'), self.centralWidget().toggle_frame)
         
         wireframe = QtGui.QAction('Wireframe', self)
-        wireframe.setStatusTip('Wireframe Mode')
+        wireframe.setStatusTip('Toggle Wireframe Mode')
         wireframe.setCheckable(True)
         wireframe.setChecked(False)
         self.connect(wireframe, QtCore.SIGNAL('triggered()'), self.centralWidget().toggle_wireframe)
@@ -82,22 +82,27 @@ class MainWindow(QtGui.QMainWindow):
     
     def import_from_file(self):
         file_name = QtGui.QFileDialog.getOpenFileName(None, "Open File", "SampleFiles/", "Obj Files (*.obj)")
-        if not file_name:
+        mesh = None
+        if file_name.endsWith('.obj',QtCore.Qt.CaseInsensitive):
+            mesh = read_obj_file(file_name)
+        if file_name.endsWith('.off',QtCore.Qt.CaseInsensitive):
+            print 'off file'
+        if mesh == None:
             return
-        
-        param = read_obj_file(file_name)
-        sd_num = 3
-        if len(param[0]) <= 300:
-            sd_num = 5
-        elif len(param[0]) >= 1000:
-            sd_num = 2
             
-        subdiv_mesh = subdiv.SDTriangleMesh(len(param[0]), param[0], len(param[1]), param[1], sd_num = sd_num)
-        param2 = subdiv_mesh.refine()
-        print 'refined'
+        sd_num = 3
+        if mesh.vNum <= 300:
+            sd_num = 5
+        elif mesh.vNum >= 1000:
+            sd_num = 2
+        print 'subdivision number',sd_num
         
-        mesh = shapes.TriangleMesh(*param2,subdNum = sd_num)
         self.centralWidget().addToDisplayList(mesh)
+        # HACKS
+        #~ subdiv_mesh = subdiv.SDTriangleMesh(len(param[0]), param[0], len(param[1]), param[1], sd_num = sd_num)
+        #~ param2 = subdiv_mesh.refine()
+        #~ print 'refined'
+        
 
 def main(*args):
     

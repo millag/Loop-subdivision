@@ -5,6 +5,7 @@ from PyQt4 import QtOpenGL
 from OpenGL import GL
 from OpenGL import GLU
 
+import glutils
 import shapes
 from geometry import *
 
@@ -14,7 +15,7 @@ class DrawingWindow(QtOpenGL.QGLWidget):
     def __init__(self, format, parent = None, shareWidget = None):
         QtOpenGL.QGLWidget.__init__(self, format, parent, shareWidget)
         
-        self.camera = Camera(25, math.pi/4, math.pi/4)
+        self.camera = Camera(20, math.pi/4, math.pi/4)
         self.frameRef = True
         self.grid = True
         self.wireframe = False
@@ -111,10 +112,10 @@ class DrawingWindow(QtOpenGL.QGLWidget):
         
         GL.glDisable(GL.GL_LIGHTING)
         if self.grid:
-            shapes.draw_grid()
+            glutils.draw_grid()
             
         if self.frameRef:
-            shapes.draw_frame()
+            glutils.draw_frame()
         GL.glEnable(GL.GL_LIGHTING)
         
         GL.glPopMatrix()

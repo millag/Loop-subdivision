@@ -1,6 +1,7 @@
 import re
 import array
 from geometry import *
+import shapes
 
 from PyQt4 import QtCore
 
@@ -38,7 +39,7 @@ def read_obj_file(filename):
                 pass
         
     file.close()
-    return (vertices, vindices, vnormals, vnindices)
+    return shapes.TriangleMesh(vertices, vindices, vnormals, vnindices)
     
 
 def _parse_vertex_data(s):
