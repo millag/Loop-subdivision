@@ -103,7 +103,6 @@ class DrawingWindow(QtOpenGL.QGLWidget):
             GL.glEnable(GL.GL_LIGHTING)
             GL.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL)
             GL.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, (GL.GLfloat * 4) ( 1, 1, 1, 1 ))
-            GL.glColor3f(1, 1, 1)
             
         if self.display_object:
             self.display_object.draw()

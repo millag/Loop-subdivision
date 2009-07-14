@@ -13,7 +13,6 @@ class Camera(object):
         self.at = Vector()
         self.up = polar(1 , self.__rot_x  , self.__rot_y + math.pi/2)
         
-    
     def rotate(self, dx, dy):
         self.__rot_x += dx*math.pi
         self.__rot_y += dy*math.pi

@@ -1,4 +1,3 @@
-# main.py
 import sys
 
 from PyQt4 import QtGui
@@ -86,7 +85,7 @@ class MainWindow(QtGui.QMainWindow):
             return
         sd_num = 3
         if mesh.vNum <= 300:
-            sd_num = 5
+            sd_num = 4
         elif mesh.vNum >= 1000:
             sd_num = 2
             

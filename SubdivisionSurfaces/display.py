@@ -5,7 +5,7 @@ from OpenGL import GL
 from OpenGL import GLU
 
 import shapes
-#~ import subdiv  
+import subdiv  
 
 class MeshSDWrap(Structure):
     _fields_ = [('mesh',shapes.TriangleMesh),
@@ -17,10 +17,7 @@ class MeshSDWrap(Structure):
         self.display_lists = (c_uint * (subdNum + 1))()
         self.subdLevel = 0
         self.is_subd = False
-        self.display_lists[self.subdLevel] = glutils.draw_mesh(mesh)
-        
-        for i in xrange(len(self.display_lists)):
-            print self.display_lists[i]
+        self.display_lists[self.subdLevel] = glutils.draw_mesh(mesh.viNum, mesh.v, mesh.vi, mesh.vn, mesh.vni)
 
     def destroy(self):
         for list_name in self.display_lists:
@@ -28,25 +25,25 @@ class MeshSDWrap(Structure):
                 GL.glDeleteLists(list_name, 1)
             
     def subdivide(self):
-        print 'mesh refine'
-        #~ if not self.is_subd and self.subdNum > 0:
-            #~ self.is_subd = True
-            #~ lists = subdiv.subdivide(self.vNum, self.v, self.viNum, self.vi, self.subdNum)
-            #~ self.__dlist[1:] = lists
-            #~ print 'lists',self.__dlist
+        if not self.is_subd and self.subdNum > 0:
+            self.is_subd = True
+            mesh_list = subdiv.subdivide(self.mesh, self.subdNum)
+            i = 1
+            for mesh in mesh_list:
+                self.display_lists[i] = glutils.draw_mesh(*mesh)
+                i += 1
             
-        #~ if self.subdLevel >= self.subdNum:
-            #~ return False
-            
-        #~ self.subdLevel +=1
-        #~ return True
+        if self.subdLevel >= self.subdNum:
+            return False
+        
+        self.subdLevel += 1
+        return True
 
     def unsubdivide(self):
-        print 'mesh unrefine'
-        #~ if self.subdLevel == 0:
-            #~ return False
-        #~ self.subdLevel -= 1
-        #~ return True
+        if self.subdLevel == 0:
+            return False
+        self.subdLevel -= 1
+        return True
     
     def draw(self):
         if self.display_lists[self.subdLevel]:

@@ -1,9 +1,7 @@
 from geometry import *
 from ctypes import *
 import array
-
-from OpenGL import GL
-from OpenGL import GLU
+import shapes
 
 def NEXT(i):
     return (i+1)%3
@@ -22,15 +20,6 @@ class SDVert(Structure):
         self.boundary = b
         self.regular = r
         self.valence = v
-        
-    def __eq__(self, other):
-        return self.pos == other.pos
-        
-    def __lt__(self, other):
-        return self.pos < other.pos
-
-    def __le__(self, other):
-        return self.pos <= other.pos
 
 class SDFace(Structure):
     _fields_ = [('v', c_int * 3),('nFaces', c_int * 3),('children',c_int * 4)]
@@ -120,15 +109,13 @@ class SDTriangleMesh(Structure):
         sd_faces = (SDFace * self.fNum)()
         
         for i in xrange(vNum):
-            sd_verts[i] = SDVert(v[i])
-            #~ sd_verts[i].__init__(v[i])
+            sd_verts[i].__init__(v[i])
         
         eNum = 0;
         edge_map = dict()
         for i in xrange(0, viNum, 3):
             index = i / 3
-            sd_faces[index] = SDFace(vi[i], vi[i + 1], vi[i + 2])
-            #~ sd_faces[index].__init__(vi[i], vi[i + 1], vi[i + 2])
+            sd_faces[index].__init__(vi[i], vi[i + 1], vi[i + 2])
             sd_face = sd_faces[index]
             
             for j in xrange(0,3):
@@ -148,10 +135,7 @@ class SDTriangleMesh(Structure):
         
         for i in xrange(vNum):
             vert = sd_verts[i]
-            
-            if vert.startFace == -1:
-                raise ValueError("ERROR in subdivision mesh construction: vertex has no startFace")
-                
+              
             ring =  array.array('I')
             ring.append( sd_faces[vert.startFace].nextVertex(i) )
             face_i = sd_faces[vert.startFace].nextFace(i)
@@ -177,9 +161,6 @@ class SDTriangleMesh(Structure):
             vert.valence = valence
             vert.ring = (c_uint * vert.valence)(*ring)
             
-            if vert.valence != len(ring):
-                raise ValueError("ERROR in subdivision mesh construction: invalid ring")    
-                
         self.sdNum = sd_num
         self.sd_verts = sd_verts
         self.sd_faces = sd_faces
@@ -192,7 +173,7 @@ class SDTriangleMesh(Structure):
         sd_verts = self.sd_verts
         sd_faces = self.sd_faces
         
-        #~ mesh_list = []
+        mesh_list = []
         
         for k in xrange(self.sdNum):
             newVNum = vNum + eNum
@@ -209,8 +190,7 @@ class SDTriangleMesh(Structure):
                 else:
                     pos = weightRingAround(vert, beta(vert), sd_verts)
                     
-                new_verts[i] = SDVert(pos, vert.boundary, vert.regular, vert.valence)
-                #~ new_verts[i].__init__(pos, vert.boundary, vert.regular, vert.valence)
+                new_verts[i].__init__(pos, vert.boundary, vert.regular, vert.valence)
                 vert.child = i
             
             #~ create new faces, compute new odd vertices and init new faces vertices and update new vertices startFace pointer
@@ -220,8 +200,7 @@ class SDTriangleMesh(Structure):
                 face = sd_faces[i]
                 #~ create 4 new successor faces
                 for j in xrange(4):
-                    new_faces[i*4 + j] = SDFace()
-                    #~ new_faces[i*4 + j].__init__()
+                    new_faces[i*4 + j].__init__()
                     face.children[j] = i*4 + j
                 
                 for j in xrange(3):
@@ -235,8 +214,7 @@ class SDTriangleMesh(Structure):
                         else:
                             pos = (sd_verts[edge.v[0]].pos + sd_verts[edge.v[1]].pos) * 0.5
                         
-                        new_verts[v_index] = SDVert(pos , (neighbour_face == -1), True)
-                        #~ new_verts[v_index].__init__(pos , (neighbour_face == -1), True)
+                        new_verts[v_index].__init__(pos , (neighbour_face == -1), True)
                         new_vert = new_verts[v_index]
                         new_vert.valence = 4 if new_vert.boundary else 6
                         new_vert.startFace = face.children[3]
@@ -283,16 +261,13 @@ class SDTriangleMesh(Structure):
             sd_verts = new_verts
             sd_faces = new_faces
             
-            #~ mesh_list.append(convert(vNum , sd_verts, fNum, sd_faces))
+            mesh_list.append(convert(vNum , sd_verts, fNum, sd_faces))
             
-        #~ return mesh_list
-        return convert(vNum , sd_verts, fNum, sd_faces)
+        return mesh_list
 
 def set_vertex_ring(vert, vert_index, sd_faces):
     ring = (c_uint * vert.valence)()
-        
-    if vert.startFace == -1:
-        raise ValueError("ERROR in subdivision mesh ring construction: vertex has no startFace")
+    
     i = 0
     ring[i] = sd_faces[vert.startFace].nextVertex(vert_index)
     face_i = sd_faces[vert.startFace].nextFace(vert_index)
@@ -310,10 +285,7 @@ def set_vertex_ring(vert, vert_index, sd_faces):
             ring[i] = sd_faces[face_i].prevVertex(vert_index)
             face_i = sd_faces[face_i].prevFace(vert_index)
             i += 1
-            
-    if vert.valence != i:
-        raise ValueError("ERROR in subdivision mesh ring construction: VALENCE DIFFERENT from RING LEN")
-        
+    
     vert.ring = ring
 
 def beta(vertex):
@@ -322,7 +294,6 @@ def beta(vertex):
     if vertex.valence == 3:
         return 3.0 / 16.0
     return  3.0 / (8.0 * vertex.valence)
-    #~ (5.0 / 8.0 - (3.0 / 8.0 + math.cos(2*math.pi / vertex.valence) / 4.0 )**2 ) / vertex.valence
 
 def weightRingAround(vertex, beta, sd_verts):
     vec = Vector()
@@ -338,70 +309,25 @@ def weightBoundaryVert(vertex, beta, sd_verts):
     vec *= beta
     vec += vertex.pos * (1.0 - 2 * beta)
     return vec
-    #~ return (1.0 - 2 * beta) * vertex.pos + beta * (sd_verts[vertex.ring[0]].pos + sd_verts[vertex.ring[vertex.valence - 1]].pos) 
 
 def convert(vNum , sd_verts , fNum, sd_faces):
     viNum = fNum*3
-    verts = (Vector * vNum)()
+    v = (Vector * vNum)()
     vi = (c_uint * viNum)()
     for i in xrange(vNum):
-        verts[i] = sd_verts[i].pos
+        v[i] = sd_verts[i].pos
         
     for i in xrange(fNum):
         index = i*3
-        
         vi[index] = sd_faces[i].v[0]
         vi[index + 1] = sd_faces[i].v[1]
         vi[index + 2] = sd_faces[i].v[2]
     
-    vn = get_normals(vNum, verts, viNum, vi)
+    vn = shapes.get_normals(vNum, v, viNum, vi)
     vni = (c_uint * viNum)(*vi)
+    return (viNum, v, vi, vn, vni)
     
-    #~ return (verts, viNum, vi, vn, vni)
-    return (verts, vi, vn, vni)
-
-def get_normals(vNum, vertices, viNum, indices):
-    res  = (Vector * vNum)()
-    
-    for j in xrange(0,viNum,3):
-        for i in xrange(3): 
-            dirx = vertices[indices[j + (i + 1)%3]] - vertices[indices[j + i]]
-            dirz = vertices[indices[j + (i + 3 - 1)%3]] - vertices[indices[j + i]]
-            diry = dirx.cross(dirz)
-            
-            res[indices[j + i]] += diry
-            
-    for j in xrange(vNum):
-        res[j].normalize()
-        
-    return res
-
-def draw_mesh(v, viNum , vi, vn, vni):
-    d_list = GL.glGenLists(1)
-    if d_list:
-        GL.glNewList(d_list, GL.GL_COMPILE)
-        GL.glBegin(GL.GL_TRIANGLES)
-        for i in xrange(viNum):
-                
-            GL.glNormal3f(vn[vni[i]].x,
-                    vn[vni[i]].y,
-                    vn[vni[i]].z)
-            GL.glVertex3f(v[vi[i]].x,
-                    v[vi[i]].y,
-                    v[vi[i]].z)
-        GL.glEnd()
-        GL.glEndList()
-    
-    return d_list
-
-
-
-def subdivide(vNum, v, viNum, vi, subdNum):
-    subd_mesh = SDTriangleMesh(vNum, v, viNum, vi, subdNum)
-    mesh_list = subd_mesh.refine()
-    
-    res = []
-    for mesh in mesh_list:
-        res.append(draw_mesh(*mesh))
-    return res
+def subdivide(mesh, subdNum):
+    subd_mesh = SDTriangleMesh(mesh.vNum, mesh.v, mesh.viNum, mesh.vi, subdNum)
+    return subd_mesh.refine()
     

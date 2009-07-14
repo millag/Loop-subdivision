@@ -1,7 +1,6 @@
 from OpenGL import GL
 from OpenGL import GLU
 
-
 def draw_frame():
     GL.glDisable(GL.GL_DEPTH_TEST)
     GL.glBegin(GL.GL_LINES)
@@ -35,18 +34,18 @@ def draw_grid():
     GL.glEnd()
     GL.glDisable(GL.GL_LINE_STIPPLE)
 
-def draw_mesh(mesh):
+def draw_mesh(viNum, v, vi, vn, vni):
     d_list = GL.glGenLists(1)
     if d_list:
         GL.glNewList(d_list, GL.GL_COMPILE)
         GL.glBegin(GL.GL_TRIANGLES)
-        for i in xrange(mesh.viNum):
-            GL.glNormal3f( mesh.vn[mesh.vni[i]].x,
-                            mesh.vn[mesh.vni[i]].y,
-                            mesh.vn[mesh.vni[i]].z)
-            GL.glVertex3f( mesh.v[mesh.vi[i]].x,
-                            mesh.v[mesh.vi[i]].y,
-                            mesh.v[mesh.vi[i]].z)
+        for i in xrange(viNum):
+            GL.glNormal3f( vn[vni[i]].x,
+                            vn[vni[i]].y,
+                            vn[vni[i]].z)
+            GL.glVertex3f( v[vi[i]].x,
+                            v[vi[i]].y,
+                            v[vi[i]].z)
         GL.glEnd()
         GL.glEndList()
             

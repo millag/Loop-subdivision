@@ -8,7 +8,6 @@ from PyQt4 import QtCore
 _float_regex = re.compile(r'(?:(?:^|\s))(?P<fnum>[-+]?(\d+(\.\d+(e[+-]\d+)?)?))(?=($|\s))',re.U)
 _face_regex = re.compile(r'(?:(?:^|\s))(?P<v>\d+)(/((?P<vt>\d*)/)?(?P<vn>\d+))?(?=($|\s))',re.U)
 
-
 def read_file(filename):
     mesh = None
     if filename.endsWith('.obj',QtCore.Qt.CaseInsensitive):
