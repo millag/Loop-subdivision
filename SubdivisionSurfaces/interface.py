@@ -6,8 +6,7 @@ from OpenGL import GL
 from OpenGL import GLU
 
 import glutils
-import shapes
-from geometry import *
+import displayutils
 
 import math
 
@@ -15,27 +14,28 @@ class DrawingWindow(QtOpenGL.QGLWidget):
     def __init__(self, format, parent = None, shareWidget = None):
         QtOpenGL.QGLWidget.__init__(self, format, parent, shareWidget)
         
-        self.camera = Camera(20, math.pi/4, math.pi/4)
+        self.camera = displayutils.Camera(20, math.pi/4, math.pi/4)
         self.frameRef = True
         self.grid = True
         self.wireframe = False
         
-        self.__display_list = []
-        self.selected_mesh = None
+        self.display_object = None
     
-    def addToDisplayList(self, item):
-        self.selected_mesh = item
-        self.__display_list.append(item)
+    def setDisplayObject(self, item):
+        if self.display_object:
+            self.display_object.destroy()
+            
+        self.display_object = item
         self.glDraw()
         
-    def refine_selected(self):
-        if self.selected_mesh:
-            self.selected_mesh.subdivide()
+    def refine_object(self):
+        if self.display_object:
+            self.display_object.subdivide()
             self.glDraw()
             
-    def unrefine_selected(self):
-        if self.selected_mesh:
-            self.selected_mesh.unsubdivide()
+    def unrefine_object(self):
+        if self.display_object:
+            self.display_object.unsubdivide()
             self.glDraw()
         
     def toggle_grid(self):
@@ -79,6 +79,7 @@ class DrawingWindow(QtOpenGL.QGLWidget):
         GL.glEnable(GL.GL_LIGHTING)
         GL.glLightfv(GL.GL_LIGHT0, GL.GL_DIFFUSE, (GL.GLfloat *4) (1, 1, 1, 1 ))
         GL.glEnable(GL.GL_LIGHT0)
+        GL.glDisable(GL.GL_TEXTURE_2D)
         
         GL.glClearColor(0.15,0.15,0.15,1)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
@@ -88,7 +89,6 @@ class DrawingWindow(QtOpenGL.QGLWidget):
         
         GL.glPushMatrix()
         GL.glLoadIdentity()
-        
         GLU.gluLookAt(self.camera.eye.x, self.camera.eye.y, self.camera.eye.z,
             self.camera.at.x , self.camera.at.y, self.camera.at.z ,
             self.camera.up.x , self.camera.up.y, self.camera.up.z)
@@ -100,15 +100,13 @@ class DrawingWindow(QtOpenGL.QGLWidget):
             GL.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_LINE)
             GL.glColor3f(0, 1, 0)
         else:
-            #~ GL.glShadeModel(GL.GL_SMOOTH)
-            #~ GL.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL)
             GL.glEnable(GL.GL_LIGHTING)
+            GL.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL)
             GL.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, (GL.GLfloat * 4) ( 1, 1, 1, 1 ))
-            GL.glDisable(GL.GL_TEXTURE_2D)
             GL.glColor3f(1, 1, 1)
             
-        for item in self.__display_list:
-            item.draw()
+        if self.display_object:
+            self.display_object.draw()
         
         GL.glDisable(GL.GL_LIGHTING)
         if self.grid:
@@ -136,42 +134,3 @@ class DrawingWindow(QtOpenGL.QGLWidget):
     
         GL.glMatrixMode(GL.GL_MODELVIEW)
 
-
-class Camera(object):
-    def __init__(self, distance, rot_x, rot_y, zNear = 0.1, zFar = 1000.0, fovy = 60.0):
-        self.zNear = zNear
-        self.zFar = zFar
-        self.fovy = fovy
-        
-        self.__rot_x = rot_x
-        self.__rot_y = rot_y
-        self.eye = polar(distance, rot_x,rot_y)
-        self.at = Vector()
-        self.up = polar(1 , self.__rot_x  , self.__rot_y + math.pi/2)
-        
-    
-    def rotate(self, dx, dy):
-        self.__rot_x += dx*math.pi
-        self.__rot_y += dy*math.pi
-        dirz = self.eye - self.at
-        self.eye = self.at + polar(dirz.length() , self.__rot_x , self.__rot_y)
-        self.up = polar(1 , self.__rot_x  , self.__rot_y + math.pi/2)
-    
-    def pan(self, dx, dy, w , h):
-        dirz = self.at - self.eye
-        wheight = 2 * dirz.length() * math.tan( math.radians(self.fovy / 2) )
-        wwidth = wheight * float(w) / h
-        
-        diry = self.up.copy()
-        diry.normalize()
-        dirx = diry.cross(dirz)
-        dirx.normalize()
-        
-        self.at = self.at + dx*wwidth*dirx + dy*wheight*diry
-        self.eye = self.eye + dx*wwidth*dirx + dy*wheight*diry
-    
-    def zoom(self, dx, dy):    
-        dirz = self.at - self.eye
-        if dirz.length() > self.zFar and dy < 0:
-            return
-        self.eye = self.eye + dy*dirz

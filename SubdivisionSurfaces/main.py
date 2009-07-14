@@ -6,8 +6,7 @@ from PyQt4 import QtCore
 
 from parsingObj import *
 from interface import *
-
-import subdiv
+import display
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent = None):
@@ -52,12 +51,12 @@ class MainWindow(QtGui.QMainWindow):
         refine = QtGui.QAction('Refine', self)
         refine.setShortcut('Ctrl+R')
         refine.setStatusTip('Refine Mesh')
-        self.connect(refine, QtCore.SIGNAL('triggered()'), self.centralWidget().refine_selected)
+        self.connect(refine, QtCore.SIGNAL('triggered()'), self.centralWidget().refine_object)
         
         unrefine = QtGui.QAction('Unrefine', self)
         unrefine.setShortcut('Ctrl+U')
         unrefine.setStatusTip('Unrefine Mesh')
-        self.connect(unrefine, QtCore.SIGNAL('triggered()'), self.centralWidget().unrefine_selected)
+        self.connect(unrefine, QtCore.SIGNAL('triggered()'), self.centralWidget().unrefine_object)
         
         menubar = self.menuBar()
         filem = menubar.addMenu('File')
@@ -82,27 +81,17 @@ class MainWindow(QtGui.QMainWindow):
     
     def import_from_file(self):
         file_name = QtGui.QFileDialog.getOpenFileName(None, "Open File", "SampleFiles/", "Obj Files (*.obj)")
-        mesh = None
-        if file_name.endsWith('.obj',QtCore.Qt.CaseInsensitive):
-            mesh = read_obj_file(file_name)
-        if file_name.endsWith('.off',QtCore.Qt.CaseInsensitive):
-            print 'off file'
+        mesh = read_file(file_name)
         if mesh == None:
             return
-            
         sd_num = 3
         if mesh.vNum <= 300:
             sd_num = 5
         elif mesh.vNum >= 1000:
             sd_num = 2
-        print 'subdivision number',sd_num
-        
-        self.centralWidget().addToDisplayList(mesh)
-        # HACKS
-        #~ subdiv_mesh = subdiv.SDTriangleMesh(len(param[0]), param[0], len(param[1]), param[1], sd_num = sd_num)
-        #~ param2 = subdiv_mesh.refine()
-        #~ print 'refined'
-        
+            
+        sd_mesh = display.MeshSDWrap(mesh,sd_num)
+        self.centralWidget().setDisplayObject(sd_mesh)
 
 def main(*args):
     

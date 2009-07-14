@@ -1,29 +1,17 @@
 from geometry import *
-from ctypes import *
-import glutils
-
-from OpenGL import GL
-from OpenGL import GLU
-
-import subdiv    
+from ctypes import *  
 
 class TriangleMesh(Structure):
     _fields_ = [('vNum',c_uint),('v',POINTER(Vector)),
                 ('viNum',c_uint),('vi',POINTER(c_uint)),
                 ('vnNum',c_uint),('vn',POINTER(Vector)),
-                ('vni',POINTER(c_uint)),
-                ('subdNum',c_uint),('subdLevel',c_uint),('is_subd',c_ubyte)]
+                ('vni',POINTER(c_uint))]
                 
     def __init__(self, v = tuple(), vi = tuple(), vn = tuple(), vni = tuple()):
         
         self.vNum = len(v)
         self.viNum = len(vi)
         self.vnNum = len(vn)
-        
-        #~ self.subdNum = subdNum
-        #~ self.subdLevel = 0
-        #~ self.is_subd = False
-        
         vniNum = len(vni)
         
         if self.viNum % 3 or vniNum % 3 :
@@ -40,35 +28,23 @@ class TriangleMesh(Structure):
                 self.vni = (c_uint * vniNum)(*vni)
         else:
             if not vniNum:
-                self.vn = subdiv.get_normals(self.vNum, self.v, self.viNum, self.vi)
+                self.vn = get_normals(self.vNum, self.v, self.viNum, self.vi)
                 self.vni = (c_uint * self.viNum)(*vi)
             else:
                 pass
-        
-        self.__dlist = None
-    
-    def subdivide(self):
-        pass
-        #~ if not self.is_subd and self.subdNum > 0:
-            #~ self.is_subd = True
-            #~ lists = subdiv.subdivide(self.vNum, self.v, self.viNum, self.vi, self.subdNum)
-            #~ self.__dlist[1:] = lists
-            #~ print 'lists',self.__dlist
-            
-        #~ if self.subdLevel >= self.subdNum:
-            #~ return False
-            
-        #~ self.subdLevel +=1
-        #~ return True
 
-    def unsubdivide(self):
-        pass
-        #~ if self.subdLevel == 0:
-            #~ return False
-        #~ self.subdLevel -= 1
-        #~ return True
+def get_normals(vNum, vertices, viNum, indices):
+    res  = (Vector * vNum)()
     
-    def draw(self):
-        if self.__dlist == None:
-            self.__dlist = glutils.draw_mesh(self)
-        GL.glCallList(self.__dlist)
+    for j in xrange(0,viNum,3):
+        for i in xrange(3): 
+            dirx = vertices[indices[j + (i + 1)%3]] - vertices[indices[j + i]]
+            dirz = vertices[indices[j + (i + 3 - 1)%3]] - vertices[indices[j + i]]
+            diry = dirx.cross(dirz)
+            
+            res[indices[j + i]] += diry
+            
+    for j in xrange(vNum):
+        res[j].normalize()
+        
+    return res    
