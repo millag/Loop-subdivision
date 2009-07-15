@@ -12,8 +12,6 @@ def read_file(filename):
     mesh = None
     if filename.endsWith('.obj',QtCore.Qt.CaseInsensitive):
         mesh = _read_obj_file(filename)
-    if filename.endsWith('.off',QtCore.Qt.CaseInsensitive):
-        print 'off file'
     return mesh
     
 def _read_obj_file(filename):
