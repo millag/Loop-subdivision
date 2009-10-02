@@ -1,0 +1,12 @@
+the app was writen in Python2.6 using PyOpenGL and PyQt4.5 
+in the dist.rar there is a compiled version for Windows 
+extract it and double click on 'main.exe' to run the app.
+
+controls:
+File -> Open to oopen an existing geomery mesh (supported only .obj format)
+Edit - > Refine to apply the algorithm
+camera:
+Alt + Left Mouse Btn - rotate
+Alt + Middle Mouse Btn - pan
+Alt + Right Mouse Btn - zoom
+
